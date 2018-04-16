@@ -40,7 +40,7 @@ class FileThread(Thread):
         while True:
             name = self.socket.recv(1024).decode("utf8")
 
-            file = self.socket.recv(4096)
+            file = self.socket.recv(65536)
 
             with open('received_file', 'wb') as f:
                 f.write(file)
@@ -56,8 +56,8 @@ class FileThread(Thread):
     def sendFile(self, file):
         with open(file, 'rb') as f:
             name = self.getSelectedUser()
-            self.socket.send(bytes(name, "utf8"))
-            content = f.read(4096)
+            self.socket.send(name.encode())
+            content = f.read(65536)
             print('Sending a file to {}'.format(name))
             messages.insert(tk.END, 'You sent a file to {}\n'.format(name))
             self.socket.send(content)
@@ -68,7 +68,7 @@ class FileThread(Thread):
 
 def enterHandler(e=None):
     input = entry.get('1.0', tk.END)
-    client_chat_socket.send(bytes(input, "utf8")) #send to server
+    client_chat_socket.send(input.encode()) #send to server
     entry.delete('1.0', tk.END)
 
 def mapStateToListBox(state):
@@ -110,8 +110,8 @@ while not namePrompt: #name not entered
     namePrompt = tk.simpledialog.askstring('Hello', 'Enter your name')
 
 #send names to servers os they can map it to the socket
-client_chat_socket.send(bytes(namePrompt, "utf8"))
-client_file_socket.send(bytes(namePrompt, "utf8"))
+client_chat_socket.send(namePrompt.encode())
+client_file_socket.send(namePrompt.encode())
 
 nameLabel = tk.Label(root, text='Connected as {}.'.format(namePrompt)).grid(row=2)
 

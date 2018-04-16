@@ -28,11 +28,10 @@ class ChatServer(Thread):
     def clientHandler(self, client):  # Takes client socket as argument
         name = client.recv(1024).decode("utf8") # from tkinter.simpledialog
         msg = "{} has joined the chat\n".format(name)
-        self.broadcast(bytes(msg, "utf8"))
+        self.broadcast(msg.encode())
         self.clientState[name] = client
-
-        self.broadcast(bytes(self.userState(), "utf8"), '!o') #broadcast chat state to users
-
+        self.broadcast(('!o' + self.userState()).encode()) #broadcast chat state to users
+        #with !o header
         #chat logic
         while True:
             msg = client.recv(1024)
@@ -40,18 +39,18 @@ class ChatServer(Thread):
             print(decoded)
             if (decoded != '!quit'):
                 sender = name + ': '
-                self.broadcast(bytes(decoded, "utf8"), sender)
+                self.broadcast(sender.encode() + msg)
             else: #!quit
                 client.close()
                 del self.clientState[name]
                 print("{} has left the chat.".format(name))
-                self.broadcast(bytes("{} has left the chat.".format(name), "utf8"))
+                self.broadcast("{} has left the chat.".format(name).encode())
                 exit()
 
-    def broadcast(self, msg, header=""):  # msg is bytes
+    def broadcast(self, msg):  # takes in encoded msg
         #send to every client
         for socket in self.clientState.values():
-            socket.send(bytes(header, 'utf8') + msg)
+            socket.send(msg)
 
     def userState(self):
         users = []
@@ -92,7 +91,7 @@ class FileServer(Thread):
             file = client.recv(1024)
             receivingSocket = self.clients[name]
             print('Sending a file to ' + str(receivingSocket.getpeername()))
-            receivingSocket.send(bytes(frm, "utf8"))
+            receivingSocket.send(frm.encode())
             receivingSocket.send(file)
 
 chatServer = ChatServer()
