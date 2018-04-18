@@ -5,6 +5,7 @@
 protocol:
     !o - python object from server
 '''
+BUFFER_SIZE = 2**16 + 1
 
 from socket import socket, SOCK_STREAM, AF_INET
 from threading import Thread, Timer
@@ -21,7 +22,7 @@ class ChatThread(Thread):
 
     def run(self):
         while True:
-            message = self.socket.recv(1024)
+            message = self.socket.recv(BUFFER_SIZE)
             decoded = message.decode("utf-8")
             if decoded.startswith('!o'): #python objects
                 state = eval(message[2:])
@@ -38,15 +39,26 @@ class FileThread(Thread):
 
     def run(self):
         while True:
-            name = self.socket.recv(1024).decode("utf8")
+            name = self.socket.recv(16).decode("utf8")
 
-            file = self.socket.recv(65536)
+            l = self.socket.recv(BUFFER_SIZE)
+            f = open('received_file', 'wb')
+            self.socket.setblocking(False)
 
-            with open('received_file', 'wb') as f:
-                f.write(file)
-                print('Received a file')
-                messages.insert(tk.END, 'You received a file from {}.\n'.format(name))
-                f.close()
+
+            while (l):
+                try:
+                    f.write(l)
+                    print('Copying data')
+                    l = self.socket.recv(BUFFER_SIZE)
+                except:
+                    print('Done copying')
+                    self.socket.setblocking(True)
+                    break
+                    f.close()
+
+            print('Received a file')
+            messages.insert(tk.END, 'You received a file from {}.\n'.format(name))
 
     def selectFile(self, e=None):
         filename =  tk.filedialog.askopenfilename(initialdir = "/Users/Aleksy/Desktop/dsik",
@@ -54,13 +66,16 @@ class FileThread(Thread):
         self.sendFile(filename)
 
     def sendFile(self, file):
-        with open(file, 'rb') as f:
+            f = open(file, 'rb')
             name = self.getSelectedUser()
             self.socket.send(name.encode())
-            content = f.read(65536)
-            print('Sending a file to {}'.format(name))
+            l = f.read(BUFFER_SIZE)
+            while l:
+                print('Sending a file to {}'.format(name))
+                self.socket.send(l)
+                l = f.read(BUFFER_SIZE)
+
             messages.insert(tk.END, 'You sent a file to {}\n'.format(name))
-            self.socket.send(content)
 
     def getSelectedUser(self):
         return list.get(tk.ACTIVE)

@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
-from socket import socket, AF_INET, SOCK_STREAM
+from socket import socket, AF_INET, SOCK_STREAM, timeout
 from threading import Thread
 from sys import exit
+
+BUFFER_SIZE = 2**16 + 1
 
 class ChatServer(Thread):
     def __init__(self):
@@ -26,7 +28,7 @@ class ChatServer(Thread):
             clientThread.start()
 
     def clientHandler(self, client):  # Takes client socket as argument
-        name = client.recv(1024).decode("utf8") # from tkinter.simpledialog
+        name = client.recv(BUFFER_SIZE).decode("utf8") # from tkinter.simpledialog
         msg = "{} has joined the chat\n".format(name)
         self.broadcast(msg.encode())
         self.clientState[name] = client
@@ -34,7 +36,7 @@ class ChatServer(Thread):
         #with !o header
         #chat logic
         while True:
-            msg = client.recv(1024)
+            msg = client.recv(BUFFER_SIZE)
             decoded = msg.decode("utf8")
             print(decoded)
             if (decoded != '!quit'):
@@ -80,19 +82,43 @@ class FileServer(Thread):
         while True:
             client, addr = self.server.accept()
             print("File server:{} has connected.".format(addr))
-            name = client.recv(1024).decode("utf8") #name
+            name = client.recv(BUFFER_SIZE).decode("utf8") #name
             self.clients[name] = client #map name to socket
             clientThread = Thread(target=self.clientHandler, args=(client, name))
             clientThread.start()
 
     def clientHandler(self, client, frm):
         while True:
-            name = client.recv(1024).decode("utf8") #who to send to
-            file = client.recv(1024)
+            name = client.recv(16).decode("utf8") #who to send to
+            print(name)
+            f = open('server_file', 'wb')
+            l = client.recv(BUFFER_SIZE)
+            client.setblocking(False)
+            while (l):
+                try:
+                    print("Receiving")
+                    f.write(l)
+                    l = client.recv(BUFFER_SIZE)
+                except:
+                    print('Done receiving')
+                    client.setblocking(True)
+                    f.close()
+                    break
+
+            f = open('server_file', 'rb')
             receivingSocket = self.clients[name]
+
             print('Sending a file to ' + str(receivingSocket.getpeername()))
             receivingSocket.send(frm.encode())
-            receivingSocket.send(file)
+
+
+            l = f.read(BUFFER_SIZE)
+            while l:
+                receivingSocket.send(l)
+                print('Passing data')
+                l = f.read(BUFFER_SIZE)
+            f.close()
+            print('Done sending')
 
 chatServer = ChatServer()
 print("Chat server running..")
