@@ -39,7 +39,7 @@ class FileThread(Thread):
 
     def run(self):
         while True:
-            name = self.socket.recv(16).decode("utf8")
+    #        name = self.socket.recv(16).decode("utf8")
 
             l = self.socket.recv(BUFFER_SIZE)
             f = open('received_file', 'wb')
@@ -58,7 +58,7 @@ class FileThread(Thread):
                     f.close()
 
             print('Received a file')
-            messages.insert(tk.END, 'You received a file from {}.\n'.format(name))
+            messages.insert(tk.END, 'You received a file') # {}.\n'.format(name))
 
     def selectFile(self, e=None):
         filename =  tk.filedialog.askopenfilename(initialdir = "/Users/Aleksy/Desktop/dsik",
@@ -95,13 +95,13 @@ def mapStateToListBox(state):
 #socket and threads configuration
 
 #chat server
-chatHost = 'localhost'
-chatPort = 8888
+chatHost = '150.254.78.29'
+chatPort = 4444
 chatAddr = (chatHost, chatPort)
 
 #file server
-fileHost = 'localhost'
-filePort = 8887
+fileHost = '150.254.78.29'
+filePort = 4443
 fileAddr = (fileHost, filePort)
 
 client_chat_socket = socket(AF_INET, SOCK_STREAM)
