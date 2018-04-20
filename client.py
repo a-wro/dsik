@@ -39,26 +39,25 @@ class FileThread(Thread):
 
     def run(self):
         while True:
-            name = self.socket.recv(16).decode("utf8")
+            #name = self.socket.recv(16).decode("utf8")
 
             l = self.socket.recv(BUFFER_SIZE)
             f = open('received_file', 'wb')
-            self.socket.setblocking(False)
-
 
             while (l):
                 try:
                     f.write(l)
                     print('Copying data')
+                    self.socket.settimeout(3.0)
                     l = self.socket.recv(BUFFER_SIZE)
                 except:
                     print('Done copying')
-                    self.socket.setblocking(True)
+                    self.socket.settimeout(None)
                     break
                     f.close()
 
             print('Received a file')
-            messages.insert(tk.END, 'You received a file from {}.\n'.format(name))
+            messages.insert(tk.END, 'You received a file') # from {}.\n'.format(name))
 
     def selectFile(self, e=None):
         filename =  tk.filedialog.askopenfilename(initialdir = "/Users/Aleksy/Desktop/dsik",
@@ -68,8 +67,9 @@ class FileThread(Thread):
     def sendFile(self, file):
             f = open(file, 'rb')
             name = self.getSelectedUser()
-            self.socket.send(name.encode())
-            l = f.read(BUFFER_SIZE)
+            #self.socket.send(name.encode())
+
+            l = name.encode() + b':' + f.read(BUFFER_SIZE)
             while l:
                 print('Sending a file to {}'.format(name))
                 self.socket.send(l)
@@ -124,7 +124,7 @@ namePrompt = tk.simpledialog.askstring('Hello', 'Enter your name')
 while not namePrompt: #name not entered
     namePrompt = tk.simpledialog.askstring('Hello', 'Enter your name')
 
-#send names to servers os they can map it to the socket
+#send names to servers so they can map it to the socket
 client_chat_socket.send(namePrompt.encode())
 client_file_socket.send(namePrompt.encode())
 

@@ -84,32 +84,33 @@ class FileServer(Thread):
             print("File server:{} has connected.".format(addr))
             name = client.recv(BUFFER_SIZE).decode("utf8") #name
             self.clients[name] = client #map name to socket
-            clientThread = Thread(target=self.clientHandler, args=(client, name))
+            clientThread = Thread(target=self.clientHandler, args=(client,))
             clientThread.start()
 
-    def clientHandler(self, client, frm):
+    def clientHandler(self, client):
         while True:
-            name = client.recv(16).decode("utf8") #who to send to
-            print(name)
             f = open('server_file', 'wb')
-            l = client.recv(BUFFER_SIZE)
-            client.setblocking(False)
-            while (l):
+
+            l = client.recv(BUFFER_SIZE) #(name:file)
+            name, content = splitBytes(l)
+
+            while (content):
                 try:
                     print("Receiving")
-                    f.write(l)
-                    l = client.recv(BUFFER_SIZE)
+                    f.write(content)
+                    client.settimeout(3.0)
+                    content = client.recv(BUFFER_SIZE)
                 except:
                     print('Done receiving')
-                    client.setblocking(True)
                     f.close()
+                    client.settimeout(None)
                     break
 
             f = open('server_file', 'rb')
-            receivingSocket = self.clients[name]
+            receivingSocket = self.clients[name.decode()]
 
             print('Sending a file to ' + str(receivingSocket.getpeername()))
-            receivingSocket.send(frm.encode())
+            #receivingSocket.send(frm.encode())
 
 
             l = f.read(BUFFER_SIZE)
@@ -119,6 +120,18 @@ class FileServer(Thread):
                 l = f.read(BUFFER_SIZE)
             f.close()
             print('Done sending')
+
+def splitBytes(bts):
+    def findColon():
+        i = 0
+        for b in bts:
+            if b == 58:
+                return i
+            i += 1
+    i = findColon()
+    return (bts[:i], bts[i+1:])
+
+
 
 chatServer = ChatServer()
 print("Chat server running..")
