@@ -13,8 +13,9 @@ class ChatServer(Thread):
         self.server = socket(AF_INET, SOCK_STREAM)
         self.clientState = {} # socket key
 
-        host = '127.0.0.1'
-        port = 8888
+        host = '150.254.78.29'
+
+        port = 4443
         addr = (host, port)
 
         self.server.bind(addr)
@@ -72,8 +73,8 @@ class FileServer(Thread):
         self.server = socket(AF_INET, SOCK_STREAM)
         self.clients = {} #internal state - name to socket mapping
 
-        host = '127.0.0.1'
-        port = 8887
+        host = '150.254.78.29'
+        port = 4442
         addr = (host, port)
 
         self.server.bind(addr)
@@ -89,6 +90,11 @@ class FileServer(Thread):
 
     def clientHandler(self, client):
         while True:
+<<<<<<< HEAD
+=======
+            name = client.recv(128).decode("utf8") #who to send to
+            print(name)
+>>>>>>> f54ff96dfaa404ac6bb76f1668de66121e82669e
             f = open('server_file', 'wb')
 
             l = client.recv(BUFFER_SIZE) #(name:file)
@@ -110,7 +116,11 @@ class FileServer(Thread):
             receivingSocket = self.clients[name.decode()]
 
             print('Sending a file to ' + str(receivingSocket.getpeername()))
+<<<<<<< HEAD
             #receivingSocket.send(frm.encode())
+=======
+        #    receivingSocket.send(frm.encode())
+>>>>>>> f54ff96dfaa404ac6bb76f1668de66121e82669e
 
 
             l = f.read(BUFFER_SIZE)
